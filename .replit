@@ -9,7 +9,7 @@ packages = ["glibcLocales"]
 run = ["sh", "-c", "b2g 입찰공고 획득 파일인데 현재 로컬에서도 작동이 안되고 코드문제는 아닌것 같은데 크롬드라이브로 우회해야하는지 모르겠다."]
 
 [workflows]
-runButton = "Run G2B Collection"
+runButton = "Run G2B Database"
 
 [[workflows.workflow]]
 name = "Run G2B Collection"
@@ -19,3 +19,21 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd BidIntelligence && python replit_g2b_solution.py"
+
+[[workflows.workflow]]
+name = "Run G2B Database"
+author = 44054344
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd BidIntelligence && python g2b_db_solution.py"
+
+[[workflows.workflow]]
+name = "Start Web Interface"
+author = 44054344
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd BidIntelligence && python web_interface.py"
