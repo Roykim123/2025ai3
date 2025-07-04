@@ -37,3 +37,21 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd BidIntelligence && python web_interface.py"
+
+[[workflows.workflow]]
+name = "Test Correct API"
+author = 44054344
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd BidIntelligence && python g2b_correct_api.py"
+
+[[workflows.workflow]]
+name = "Generate Test URLs"
+author = 44054344
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd BidIntelligence && python test_api_urls.py"
