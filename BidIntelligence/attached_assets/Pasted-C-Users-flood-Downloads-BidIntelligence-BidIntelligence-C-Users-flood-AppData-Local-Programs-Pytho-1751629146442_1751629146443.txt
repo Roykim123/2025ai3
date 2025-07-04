@@ -1,0 +1,88 @@
+C:\Users\flood\Downloads\BidIntelligence\BidIntelligence>C:\Users\flood\AppData\Local\Programs\Python\Python313\python.exe g2b_local_version.py
+🏛️  G2B Korean Government Procurement Bid Collection System
+🤖 Browser Automation Version
+======================================================================
+🚀 Starting browser automation data collection...
+Starting G2B bid collection with browser automation...
+
+DevTools listening on ws://127.0.0.1:62008/devtools/browser/16f084f9-5f44-4216-8983-93a4676f1918
+✓ Browser started successfully
+🌐 Accessing G2B bid announcement page...
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1751628978.693776    7732 voice_transcription.cc:58] Registering VoiceTranscriptionCapability
+[20324:18712:0704/203619.024:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+Created TensorFlow Lite XNNPACK delegate for CPU.
+[20324:18712:0704/203647.044:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+⚠️ Could not find main frame, continuing with current context...
+⚙️ Setting search criteria...
+⚠️ Could not set search criteria: Message:
+Stacktrace:
+        GetHandleVerifier [0x0x1264553+62419]
+        GetHandleVerifier [0x0x1264594+62484]
+        (No symbol) [0x0x10a2133]
+        (No symbol) [0x0x10ea8fe]
+        (No symbol) [0x0x10eac9b]
+        (No symbol) [0x0x1133052]
+        (No symbol) [0x0x110f4b4]
+        (No symbol) [0x0x113087a]
+        (No symbol) [0x0x110f266]
+        (No symbol) [0x0x10de852]
+        (No symbol) [0x0x10df6f4]
+        GetHandleVerifier [0x0x14d4833+2619059]
+        GetHandleVerifier [0x0x14cfc4a+2599626]
+        GetHandleVerifier [0x0x128b0fa+221050]
+        GetHandleVerifier [0x0x127b378+156152]
+        GetHandleVerifier [0x0x1281d2d+183213]
+        GetHandleVerifier [0x0x126c438+94904]
+        GetHandleVerifier [0x0x126c5c2+95298]
+        GetHandleVerifier [0x0x125771a+9626]
+        BaseThreadInitThunk [0x0x76345d49+25]
+        RtlInitializeExceptionChain [0x0x77a4d09b+107]
+        RtlGetAppContainerNamedObjectPath [0x0x77a4d021+561]
+
+Proceeding with default settings...
+[20324:18712:0704/203732.238:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: QUOTA_EXCEEDED
+⚠️ Could not find search button, trying alternative method...
+📊 Extracting bid announcement data...
+❌ Could not find results table
+💾 Page source saved to output/page_source_debug.html for debugging
+✓ Browser closed successfully
+
+⚠️  Browser automation failed. Using demo data for testing.
+📝 Note: This happens when browser environment is not available.
+
+✅ Collection completed!
+💾 File saved: output/입찰공고_20250704.csv
+
+==================================================
+📊 COLLECTION STATISTICS
+==================================================
+Total collected: 2 announcements
+
+📋 Contract Methods:
+  • 일반경쟁입찰: 1 announcements
+  • 제한경쟁입찰: 1 announcements
+
+🏢 Top 5 Agencies:
+  • 서울특별시: 1 announcements
+  • 경기도: 1 announcements
+==================================================
+
+======================================================================
+🖥️  LOCAL PC EXECUTION GUIDE
+======================================================================
+1. Install Python 3.8 or higher
+2. Install required packages:
+   pip install selenium webdriver-manager pandas
+3. Install Chrome browser
+4. Run the script:
+   python g2b_local_version.py
+5. Check output folder for CSV files
+
+💡 Tips:
+• Browser automation bypasses G2B's 403 errors
+• Set headless=False in setup_browser() to watch the automation
+• The script automatically downloads ChromeDriver
+• Works on Windows, macOS, and Linux
+
+C:\Users\flood\Downloads\BidIntelligence\BidIntelligence>
