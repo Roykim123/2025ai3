@@ -29,17 +29,28 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 DB_NAME = "g2b_bids.db"
 SEARCH_DAYS = 30
 
-# 여러 API 소스 설정
+# 나라장터 공식 API 설정
 API_SOURCES = {
-    'openapi': {
-        'base_url': 'https://openapi.gg.go.kr/BidPblancThngInq',
-        'key': 'sample',
-        'format': 'json'
-    },
-    'data_go_kr': {
+    'g2b_goods': {
         'base_url': 'https://apis.data.go.kr/1230000/ad/BidPublicInfoService',
+        'operation': 'getBidPblancListInfoThngPPSSrch',
         'key': 'holAgj/0G+0f0COeMdfrl+0iDpm1lSzmYMlYxmMYq/7vkjMMFWZMMBZ6cReG+1VhhyIdN/pgykHNXwlkSYSZ/w==',
-        'format': 'xml'
+        'format': 'xml',
+        'category': '물품'
+    },
+    'g2b_service': {
+        'base_url': 'https://apis.data.go.kr/1230000/ad/BidPublicInfoService',
+        'operation': 'getBidPblancListInfoServcPPSSrch',
+        'key': 'holAgj/0G+0f0COeMdfrl+0iDpm1lSzmYMlYxmMYq/7vkjMMFWZMMBZ6cReG+1VhhyIdN/pgykHNXwlkSYSZ/w==',
+        'format': 'xml',
+        'category': '용역'
+    },
+    'g2b_construction': {
+        'base_url': 'https://apis.data.go.kr/1230000/ad/BidPublicInfoService',
+        'operation': 'getBidPblancListInfoCnstwkPPSSrch',
+        'key': 'holAgj/0G+0f0COeMdfrl+0iDpm1lSzmYMlYxmMYq/7vkjMMFWZMMBZ6cReG+1VhhyIdN/pgykHNXwlkSYSZ/w==',
+        'format': 'xml',
+        'category': '공사'
     }
 }
 
@@ -254,62 +265,114 @@ class G2BCollector:
             'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8'
         })
     
-    def collect_from_openapi_gg(self) -> int:
-        """경기도 OpenAPI에서 데이터 수집"""
-        print("🔗 경기도 OpenAPI 데이터 수집 시작...")
+    def collect_from_g2b_api(self) -> int:
+        """나라장터 공식 API에서 데이터 수집"""
+        print("🔗 나라장터 공식 API 데이터 수집 시작...")
         
-        try:
-            url = API_SOURCES['openapi']['base_url']
-            params = {
-                'KEY': API_SOURCES['openapi']['key'],
-                'Type': 'json',
-                'pIndex': 1,
-                'pSize': 100
-            }
+        total_collected = 0
+        
+        # 각 카테고리별로 수집
+        for source_name, source_config in API_SOURCES.items():
+            print(f"📋 {source_config['category']} 공고 수집 중...")
             
-            response = self.session.get(url, params=params, timeout=30)
-            self.db.log_api_call('openapi_gg', url, response.status_code, len(response.content))
-            
-            if response.status_code == 200:
-                try:
-                    data = response.json()
-                    items = data.get('BidPblancThngInq', [{}])[1].get('row', [])
-                    
-                    collected_count = 0
-                    for item in items:
-                        bid_data = {
-                            'bid_number': item.get('BID_PBLANC_ID', ''),
-                            'title': item.get('BID_PBLANC_NM_INFO', ''),
-                            'agency': item.get('PBLANC_INST_NM', ''),
-                            'department': item.get('DEMAND_INST_NM', ''),
-                            'contract_method': item.get('CONTRACT_CONCLSN_METHD', ''),
-                            'announcement_date': item.get('BID_PBLANC_TM', ''),
-                            'deadline_date': item.get('BID_CLOS_TM', ''),
-                            'opening_date': item.get('OPNBID_TM', ''),
-                            'bid_method': item.get('BID_METHD', ''),
-                            'category': '물품',
-                            'collection_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                            'collection_method': '경기도 OpenAPI',
-                            'link_url': f"https://www.g2b.go.kr/pt/menu/selectSubFrame.do?bidNtceNo={item.get('BID_PBLANC_ID', '')}"
-                        }
-                        
-                        if self.db.insert_bid(bid_data):
-                            collected_count += 1
-                    
-                    print(f"✅ 경기도 API: {collected_count}개 새로운 공고 수집")
-                    return collected_count
-                    
-                except json.JSONDecodeError as e:
-                    print(f"❌ JSON 파싱 오류: {e}")
-                    
-            else:
-                print(f"❌ 경기도 API 오류: {response.status_code}")
+            try:
+                url = f"{source_config['base_url']}/{source_config['operation']}"
                 
-        except Exception as e:
-            print(f"❌ 경기도 API 호출 실패: {e}")
-            self.db.log_api_call('openapi_gg', url, 0, 0, str(e))
+                # 날짜 범위 계산
+                end_date = datetime.now()
+                start_date = end_date - timedelta(days=SEARCH_DAYS)
+                
+                params = {
+                    'serviceKey': source_config['key'],
+                    'numOfRows': '100',
+                    'pageNo': '1',
+                    'type': 'xml',
+                    'inqryDiv': '1',
+                    'inqryBgnDt': start_date.strftime('%Y%m%d%H%M'),
+                    'inqryEndDt': end_date.strftime('%Y%m%d%H%M')
+                }
+                
+                response = self.session.get(url, params=params, timeout=30)
+                self.db.log_api_call(source_name, url, response.status_code, len(response.content))
+                
+                if response.status_code == 200:
+                    try:
+                        import xml.etree.ElementTree as ET
+                        root = ET.fromstring(response.content)
+                        
+                        # 결과 확인
+                        result_code = root.find('.//resultCode')
+                        if result_code is not None and result_code.text != '00':
+                            result_msg = root.find('.//resultMsg')
+                            error_msg = result_msg.text if result_msg is not None else 'Unknown error'
+                            print(f"❌ API 오류: {error_msg}")
+                            continue
+                        
+                        # 아이템 추출
+                        items = root.findall('.//item')
+                        collected_count = 0
+                        
+                        for item in items:
+                            try:
+                                def get_text(tag_name: str) -> str:
+                                    elem = item.find(tag_name)
+                                    return elem.text.strip() if elem is not None and elem.text else '정보없음'
+                                
+                                # 수의계약 필터링
+                                contract_method = get_text('cntrctCnclsMthdNm')
+                                if '수의계약' in contract_method:
+                                    continue
+                                
+                                bid_data = {
+                                    'bid_number': get_text('bidNtceNo'),
+                                    'title': get_text('bidNtceNm'),
+                                    'agency': get_text('ntceInsttNm'),
+                                    'department': get_text('dminsttNm'),
+                                    'contract_method': contract_method,
+                                    'announcement_date': get_text('bidNtceDt'),
+                                    'deadline_date': get_text('bidClseDt'),
+                                    'opening_date': get_text('opengDt'),
+                                    'estimated_price': get_text('presmptPrc'),
+                                    'budget': get_text('assmtUprc'),
+                                    'min_bid_rate': get_text('scsbdAmt'),
+                                    'qualification': get_text('prtcptLmtYn'),
+                                    'region_limit': get_text('rgstTyNm'),
+                                    'industry_limit': get_text('indstryClNm'),
+                                    'bid_method': get_text('bidMethdNm'),
+                                    'announcement_type': get_text('ntceKindNm'),
+                                    'international_bid': get_text('intrbidYn'),
+                                    're_announcement': get_text('reNtceYn'),
+                                    'contact_person': get_text('ntceInsttOfclNm'),
+                                    'contact_phone': get_text('ntceInsttOfclTelNo'),
+                                    'contact_email': get_text('ntceInsttOfclEmailAdrs'),
+                                    'reference_number': get_text('refNo'),
+                                    'category': source_config['category'],
+                                    'collection_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                    'collection_method': '나라장터 공식 API',
+                                    'link_url': f"https://www.g2b.go.kr/pt/menu/selectSubFrame.do?bidNtceNo={get_text('bidNtceNo')}"
+                                }
+                                
+                                if self.db.insert_bid(bid_data):
+                                    collected_count += 1
+                                    
+                            except Exception as e:
+                                print(f"⚠️ 아이템 처리 오류: {e}")
+                                continue
+                        
+                        print(f"✅ {source_config['category']}: {collected_count}개 새로운 공고 수집")
+                        total_collected += collected_count
+                        
+                    except ET.ParseError as e:
+                        print(f"❌ XML 파싱 오류: {e}")
+                        
+                else:
+                    print(f"❌ {source_config['category']} API 오류: {response.status_code}")
+                    
+            except Exception as e:
+                print(f"❌ {source_config['category']} API 호출 실패: {e}")
+                self.db.log_api_call(source_name, url, 0, 0, str(e))
         
-        return 0
+        return total_collected
     
     def collect_demo_data(self) -> int:
         """데모 데이터 생성"""
@@ -387,13 +450,14 @@ class G2BCollector:
         
         total_collected = 0
         
-        # 1. 경기도 OpenAPI 시도
-        count = self.collect_from_openapi_gg()
+        # 1. 나라장터 공식 API 시도
+        count = self.collect_from_g2b_api()
         total_collected += count
         
         # 2. 데이터가 없으면 데모 데이터 생성
         if total_collected == 0:
-            print("\n💡 실제 API 연결이 어려워 데모 데이터를 생성합니다.")
+            print("\n💡 나라장터 API 연결이 어려워 데모 데이터를 생성합니다.")
+            print("   (Replit 환경의 네트워크 제한일 수 있습니다)")
             count = self.collect_demo_data()
             total_collected += count
         
@@ -419,10 +483,13 @@ def main():
         stats = collector.run_collection()
         
         print("\n" + "=" * 60)
-        print("💡 G2B 데이터베이스 시스템 특징")
+        print("💡 G2B 나라장터 데이터베이스 시스템 특징")
         print("=" * 60)
+        print("✅ 나라장터 공식 API 연동 (공공데이터포털)")
         print("✅ SQLite 데이터베이스로 영구 저장")
         print("✅ 중복 데이터 자동 필터링")
+        print("✅ 물품/용역/공사 전 분야 수집")
+        print("✅ 수의계약 자동 제외")
         print("✅ API 호출 로그 관리")
         print("✅ 실시간 통계 제공")
         print("✅ CSV 내보내기 지원")
