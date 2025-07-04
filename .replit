@@ -3,6 +3,19 @@ run = "b2g 입찰공고 획득 파일인데 현재 로컬에서도 작동이 안
 
 [nix]
 channel = "stable-24_05"
+packages = ["glibcLocales"]
 
 [deployment]
 run = ["sh", "-c", "b2g 입찰공고 획득 파일인데 현재 로컬에서도 작동이 안되고 코드문제는 아닌것 같은데 크롬드라이브로 우회해야하는지 모르겠다."]
+
+[workflows]
+runButton = "Run G2B Collection"
+
+[[workflows.workflow]]
+name = "Run G2B Collection"
+author = 44054344
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd BidIntelligence && python replit_g2b_solution.py"
